@@ -81,7 +81,6 @@ app.post('/user/:address', (request, response) => {
 
 app.get('/user/:address', (request, response) => {
   address = request.params.address;
-  response.send(address);
   collection.find({address: address}).toArray(function(err, docs) {
     if (err != null || docs === undefined || docs.length == 0) {
       response.status(404)
