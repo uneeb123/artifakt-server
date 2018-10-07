@@ -3,6 +3,7 @@
 const express = require('express')
 const app = express()
 const port = 8000
+const cors = require('cors');
 
 
 /* Database configuration */
@@ -11,7 +12,7 @@ const MongoClient = require('mongodb').MongoClient;
 const password = "QCTlAIXVHJaShBoi";
 const username = 'uneeb123';
 const mongoUri = "mongodb+srv://" + username + ":" + password + "@artifakt-4k2c1.mongodb.net/test?retryWrites=true"
-const databaseName = "test";
+const databaseName = "test2";
 const collectionName = "users";
 
 var client;
@@ -42,6 +43,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
+app.use(cors());
+
 
 app.get('/', (request, response) => {
   response.send("This thing is alive");
@@ -52,10 +55,10 @@ function validate(record) {
 }
 
 app.post('/user/:address', (request, response) => {
-  address = request.params.address;
-  username = request.body.username;
-  email = request.body.email;
-  record = {
+  let address = request.params.address;
+  let username = request.body.username;
+  let email = request.body.email;
+  let record = {
     address: address,
     username: username,
     email: email
@@ -64,7 +67,7 @@ app.post('/user/:address', (request, response) => {
     response.status(400);
     response.send("Unable to read user");
   }
-  collection.insert(record, function(err, result) {
+  collection.insertOne(record, function(err, result) {
     if (err) {
       response.status(500);
       response.send("Unable to write to the database");
