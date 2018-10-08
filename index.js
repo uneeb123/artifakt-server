@@ -5,6 +5,11 @@ const app = express()
 const port = 8000
 const cors = require('cors');
 
+/* Authentication */
+
+const sigUtil = require('eth-sig-util')
+const signUpTerms = require('./terms.json'); 
+
 
 /* Database configuration */
 
@@ -12,7 +17,7 @@ const MongoClient = require('mongodb').MongoClient;
 const password = "QCTlAIXVHJaShBoi";
 const username = 'uneeb123';
 const mongoUri = "mongodb+srv://" + username + ":" + password + "@artifakt-4k2c1.mongodb.net/test?retryWrites=true"
-const databaseName = "test2";
+const databaseName = "test5";
 const collectionName = "users";
 
 var client;
@@ -58,6 +63,15 @@ app.post('/user/:address', (request, response) => {
   let address = request.params.address;
   let username = request.body.username;
   let email = request.body.email;
+  let sig = request.body.sig;
+  let msgParams = {data: signUpTerms.text, sig: sig};
+  let recoveredAddress = sigUtil.recoverPersonalSignature(msgParams);
+  if (recoveredAddress.toLowerCase() !== address.toLowerCase() ) {
+    console.log("Address on request failed to match with the signer");
+    response.sendStatus(401);
+    return;
+  }
+
   let record = {
     address: address,
     username: username,
@@ -74,13 +88,13 @@ app.post('/user/:address', (request, response) => {
     }
     else {
       console.log("New user (" + username + ") just registered");
-      response.sendStatus(200);
+      response.sendStatus(201);
     }
   });
 });
 
 app.get('/user/:address', (request, response) => {
-  address = request.params.address;
+  let address = request.params.address;
   collection.find({address: address}).toArray(function(err, docs) {
     if (err != null || docs === undefined || docs.length == 0) {
       response.status(404)
@@ -90,6 +104,22 @@ app.get('/user/:address', (request, response) => {
       response.send(docs[0]);
     }
   });
+});
+
+app.post('/auth/:address', (request, response) => {
+  let address = request.params.address;
+  // msg contains timestamp
+  let msg = request.body.msg;
+  let sig = request.body.sig;
+  let recovered = sigUtil.recoverPersonalSignature({ data: msg, sig: sig });
+  if (recovered.toLowerCase() === address.toLowerCase()) {
+    console.log("Authentication for " + address + " successful");
+    // TODO: issue a token here
+    response.sendStatus(200);
+  } else {
+    console.log("Authentication for " + address + " unsuccessful");
+    response.sendStatus(401);
+  }
 });
 
 /* Establish connections */
